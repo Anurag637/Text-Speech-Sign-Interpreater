@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech-to-Text - Samvaad Setu</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="0.5" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: 
+                0 25px 50px rgba(0, 0, 0, 0.15),
+                0 0 0 1px rgba(255, 255, 255, 0.2);
+            max-width: 1000px;
+            margin: 0 auto;
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+            animation: slideUp 0.8s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23dots)"/></svg>');
+            opacity: 0.3;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .logo {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .logo:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .header h1 {
+            font-size: 2.75rem;
+            font-weight: 800;
+            margin: 0;
+            position: relative;
+            z-index: 1;
+            letter-spacing: -0.02em;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+            font-weight: 400;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 25px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 12px 24px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .nav-links a:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .content {
+            padding: 50px;
+        }
+
+        .form-group {
+            margin-bottom: 30px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 12px;
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 1rem;
+        }
+
+        .form-group select {
+            width: 100%;
+            padding: 16px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+        }
+
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 40px;
+        }
+
+        .btn {
+            padding: 16px 32px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.8);
+            color: #64748b;
+            border: 2px solid #e2e8f0;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.9);
+            border-color: #667eea;
+            color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .output-section {
+            margin-top: 40px;
+            padding: 30px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+            border: 1px solid rgba(102, 126, 234, 0.1);
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .output-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.5), transparent);
+        }
+
+        .output-section h3 {
+            color: #1e293b;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .output-text {
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 25px;
+            min-height: 120px;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: #1e293b;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .output-text:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .status {
+            padding: 16px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-weight: 500;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .status.show {
+            display: block;
+        }
+
+        .status.recording {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .status.success {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .help-text {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(147, 51, 234, 0.05) 100%);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 16px;
+            padding: 25px;
+            margin-top: 30px;
+        }
+
+        .help-text h4 {
+            color: #1e40af;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .help-text ul {
+            margin-left: 20px;
+            color: #64748b;
+        }
+
+        .help-text li {
+            margin-bottom: 8px;
+            line-height: 1.6;
+        }
+
+        .recording-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+            color: white;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .confidence-indicator {
+            margin-top: 15px;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: #64748b;
+            display: none;
+        }
+
+        .confidence-bar {
+            width: 100%;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 3px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b6b 0%, #ffd93d 50%, #6bcf7f 100%);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                padding: 30px 20px;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .nav-links {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .header h1 {
+                font-size: 2.2rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .header p {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo-container">
+                <img src="WhatsApp Image 2025-09-23 at 07.10.24_3b847942.jpg" alt="Samvaad Setu Logo" class="logo">
+                <h1>🎤 Speech-to-Text</h1>
+            </div>
+            <p>Essential tool for deaf and dumb users - Convert speech to text with high accuracy</p>
+            <div class="nav-links">
+                <a href="home.html">🏠 Home</a>
+                <a href="text-to-speech.html">📝➡️🔊 TTS</a>
+                <a href="text-to-sign.html">📝➡️👋 Text-to-Sign</a>
+                <a href="sign-to-text.html">👋➡️📝 Sign-to-Text</a>
+            </div>
+        </div>
+
+        <div class="content">
+            <form id="sttForm">
+                <div class="form-group">
+                    <label for="languageSelect">Output Language:</label>
+                    <select id="languageSelect">
+                        <option value="auto">Auto Detect</option>
+                        <option value="hindi">Hindi</option>
+                        <option value="english">English</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="confidenceSelect">Recognition Confidence:</label>
+                    <select id="confidenceSelect">
+                        <option value="0.7">High (70%)</option>
+                        <option value="0.5">Medium (50%)</option>
+                        <option value="0.3">Low (30%)</option>
+                    </select>
+                </div>
+
+                <div class="button-group">
+                    <button type="button" id="startBtn" class="btn btn-primary">
+                        🎤 Start Recording
+                    </button>
+                    <button type="button" id="stopBtn" class="btn btn-secondary" disabled>
+                        ⏹️ Stop
+                    </button>
+                    <button type="button" id="clearBtn" class="btn btn-secondary">
+                        🗑️ Clear
+                    </button>
+                    <button type="button" id="switchLangBtn" class="btn btn-secondary">
+                        🔄 Switch Language
+                    </button>
+                </div>
+            </form>
+
+            <div id="status" class="status" style="display: none;"></div>
+
+            <div class="output-section">
+                <h3>Recognized Text</h3>
+                <div id="outputText" class="output-text" contenteditable="true">
+                    Click "Start Recording" and speak clearly to see the recognized text here...
+                </div>
+                <div id="confidenceIndicator" class="confidence-indicator">
+                    Recognition Confidence: <span id="confidenceValue">0%</span>
+                    <div class="confidence-bar">
+                        <div id="confidenceFill" class="confidence-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="help-text">
+                <h4>ℹ️ How it works:</h4>
+                <ul>
+                    <li><strong>Start Recording:</strong> Click the microphone button and allow microphone access</li>
+                    <li><strong>Auto Detect:</strong> Automatically detects if you're speaking English or Hindi</li>
+                    <li><strong>Hindi/English:</strong> Force recognition in specific language for better accuracy</li>
+                    <li><strong>Confidence Level:</strong> Adjust how strict the recognition should be</li>
+                    <li><strong>Switch Language:</strong> Manually toggle between English and Hindi recognition</li>
+                    <li><strong>Clear:</strong> Clear all recognized text and start fresh</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class SpeechToText {
+            constructor() {
+                this.recognition = null;
+                this.isRecording = false;
+                this.savedText = '';
+                this.currentText = '';
+                this.currentLang = 'en-US';
+                this.updateTimeout = null;
+                
+                this.initializeElements();
+                this.setupSpeechRecognition();
+                this.setupEventListeners();
+            }
+
+            initializeElements() {
+                this.languageSelect = document.getElementById('languageSelect');
+                this.confidenceSelect = document.getElementById('confidenceSelect');
+                this.startBtn = document.getElementById('startBtn');
+                this.stopBtn = document.getElementById('stopBtn');
+                this.clearBtn = document.getElementById('clearBtn');
+                this.switchLangBtn = document.getElementById('switchLangBtn');
+                this.status = document.getElementById('status');
+                this.outputText = document.getElementById('outputText');
+                this.confidenceIndicator = document.getElementById('confidenceIndicator');
+                this.confidenceValue = document.getElementById('confidenceValue');
+                this.confidenceFill = document.getElementById('confidenceFill');
+            }
+
+            setupSpeechRecognition() {
+                if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                    this.showStatus('Speech recognition not supported in this browser. Please use Chrome, Firefox, Safari, or Edge.', 'error');
+                    return;
+                }
+
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                this.recognition = new SpeechRecognition();
+                
+                this.recognition.continuous = true;
+                this.recognition.interimResults = true;
+                this.recognition.maxAlternatives = 1;
+            }
+
+            setupEventListeners() {
+                this.startBtn.addEventListener('click', () => this.startRecording());
+                this.stopBtn.addEventListener('click', () => this.stopRecording());
+                this.clearBtn.addEventListener('click', () => this.clearText());
+                this.switchLangBtn.addEventListener('click', () => this.switchLanguage());
+                
+                document.getElementById('sttForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.startRecording();
+                });
+            }
+
+            startRecording() {
+                if (!this.recognition) {
+                    this.showStatus('Speech recognition not available', 'error');
+                    return;
+                }
+
+                const languageMode = this.languageSelect.value;
+                
+                if (languageMode === 'auto') {
+                    this.currentLang = 'en-US';
+                } else if (languageMode === 'hindi') {
+                    this.currentLang = 'hi-IN';
+                } else {
+                    this.currentLang = 'en-US';
+                }
+
+                this.currentText = '';
+                this.outputText.textContent = this.savedText + ' [Listening...]';
+
+                this.recognition.lang = this.currentLang;
+                this.recognition.start();
+                this.isRecording = true;
+                
+                this.startBtn.disabled = true;
+                this.startBtn.innerHTML = '<span class="recording-indicator">🔴 Recording...</span>';
+                this.stopBtn.disabled = false;
+                
+                this.showStatus('Recording... Speak clearly', 'recording');
+
+                this.recognition.onstart = () => {
+                    console.log('Speech recognition started');
+                };
+
+                this.recognition.onresult = (event) => {
+                    let finalText = '';
+                    let interimText = '';
+                    let maxConfidence = 0;
+                    
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        const transcript = event.results[i][0].transcript;
+                        const confidence = event.results[i][0].confidence;
+                        
+                        if (event.results[i].isFinal) {
+                            if (confidence >= parseFloat(this.confidenceSelect.value)) {
+                                finalText += transcript + ' ';
+                                maxConfidence = Math.max(maxConfidence, confidence);
+                                console.log('Final transcript:', transcript, 'Confidence:', confidence);
+                            }
+                        } else {
+                            if (this.currentText.trim() === '') {
+                                interimText += transcript;
+                            }
+                        }
+                    }
+                    
+                    this.currentText += finalText;
+                    
+                    let displayText;
+                    if (this.currentText.trim()) {
+                        displayText = this.savedText + this.currentText;
+                    } else {
+                        displayText = this.savedText + interimText;
+                    }
+                    
+                    if (this.updateTimeout) {
+                        clearTimeout(this.updateTimeout);
+                    }
+                    
+                    this.updateTimeout = setTimeout(() => {
+                        this.outputText.textContent = displayText || 'Click "Start Recording" and speak clearly...';
+                    }, 100);
+                    
+                    if (maxConfidence > 0) {
+                        this.updateConfidenceIndicator(maxConfidence);
+                    }
+                    
+                    if (this.languageSelect.value === 'auto' && this.currentText.trim()) {
+                        this.autoDetectLanguage(this.savedText + this.currentText);
+                    }
+                };
+
+                this.recognition.onerror = (event) => {
+                    console.error('Speech recognition error:', event.error);
+                    this.showStatus(`Recognition error: ${event.error}`, 'error');
+                    this.stopRecording();
+                };
+
+                this.recognition.onend = () => {
+                    console.log('Speech recognition ended');
+                    this.stopRecording();
+                };
+            }
+
+            updateConfidenceIndicator(confidence) {
+                const percentage = Math.round(confidence * 100);
+                this.confidenceValue.textContent = `${percentage}%`;
+                this.confidenceFill.style.width = `${percentage}%`;
+                this.confidenceIndicator.style.display = 'block';
+            }
+
+            autoDetectLanguage(text) {
+                const detectedLanguage = this.detectLanguage(text);
+                console.log('Auto-detected language:', detectedLanguage);
+                
+                const targetLang = detectedLanguage === 'hindi' ? 'hi-IN' : 'en-US';
+                if (targetLang !== this.currentLang && this.isRecording) {
+                    console.log(`Switching from ${this.currentLang} to ${targetLang}`);
+                    this.currentLang = targetLang;
+                    
+                    try {
+                        this.recognition.stop();
+                        setTimeout(() => {
+                            this.recognition.lang = this.currentLang;
+                            this.recognition.start();
+                            this.showStatus(`Switched to ${targetLang} recognition`, 'info');
+                        }, 100);
+                    } catch (e) {
+                        console.warn('Language switch failed:', e);
+                    }
+                }
+            }
+
+            detectLanguage(text) {
+                const hindiMatches = (text.match(/[\u0900-\u097F]/g) || []).length;
+                const englishMatches = (text.match(/[a-zA-Z]/g) || []).length;
+                const totalChars = text.replace(/\s/g, '').length;
+                
+                console.log('Language detection:');
+                console.log('- Text:', text.substring(0, 100));
+                console.log('- Hindi characters:', hindiMatches);
+                console.log('- English characters:', englishMatches);
+                console.log('- Total chars:', totalChars);
+                
+                if (hindiMatches > 0) {
+                    console.log('Detected: Hindi (has Hindi characters)');
+                    return 'hindi';
+                }
+                
+                if (englishMatches > 0) {
+                    console.log('Detected: English (has English characters)');
+                    return 'english';
+                }
+                
+                console.log('Detected: English (default fallback)');
+                return 'english';
+            }
+
+            stopRecording() {
+                if (this.recognition && this.isRecording) {
+                    this.recognition.stop();
+                }
+                
+                this.isRecording = false;
+                this.startBtn.disabled = false;
+                this.startBtn.textContent = '🎤 Start Recording';
+                this.stopBtn.disabled = true;
+                
+                if (this.currentText.trim()) {
+                    this.savedText += this.currentText;
+                    this.currentText = '';
+                }
+                
+                this.outputText.textContent = this.savedText || 'Click "Start Recording" and speak clearly...';
+                
+                this.showStatus('Recording stopped', 'info');
+            }
+
+            clearText() {
+                this.savedText = '';
+                this.currentText = '';
+                this.outputText.textContent = 'Click "Start Recording" and speak clearly...';
+                this.confidenceIndicator.style.display = 'none';
+                this.showStatus('Text cleared', 'info');
+            }
+
+            switchLanguage() {
+                if (this.isRecording) {
+                    this.showStatus('Cannot switch language while recording. Stop first.', 'error');
+                    return;
+                }
+                
+                if (this.currentLang === 'en-US') {
+                    this.currentLang = 'hi-IN';
+                    this.showStatus('Switched to Hindi recognition', 'info');
+                } else {
+                    this.currentLang = 'en-US';
+                    this.showStatus('Switched to English recognition', 'info');
+                }
+                
+                console.log('Manual language switch to:', this.currentLang);
+            }
+
+            showStatus(message, type) {
+                this.status.textContent = message;
+                this.status.className = `status show ${type}`;
+                
+                setTimeout(() => {
+                    this.status.classList.remove('show');
+                }, 5000);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            new SpeechToText();
+        });
+    </script>
+</body>
+</html>

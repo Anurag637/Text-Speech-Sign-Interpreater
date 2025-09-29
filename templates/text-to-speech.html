@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text-to-Speech - Samvaad Setu</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="0.5" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: 
+                0 25px 50px rgba(0, 0, 0, 0.15),
+                0 0 0 1px rgba(255, 255, 255, 0.2);
+            max-width: 1000px;
+            margin: 0 auto;
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+            animation: slideUp 0.8s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23dots)"/></svg>');
+            opacity: 0.3;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .logo {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .logo:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .header h1 {
+            font-size: 2.75rem;
+            font-weight: 800;
+            margin: 0;
+            position: relative;
+            z-index: 1;
+            letter-spacing: -0.02em;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+            font-weight: 400;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 25px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 12px 24px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .nav-links a:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .content {
+            padding: 50px;
+        }
+
+        .form-group {
+            margin-bottom: 30px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 12px;
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 1rem;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 16px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-family: inherit;
+            resize: vertical;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        select {
+            width: 100%;
+            padding: 16px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-family: inherit;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 40px;
+        }
+
+        button {
+            padding: 16px 32px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            min-width: 140px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        button:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.8);
+            color: #64748b;
+            border: 2px solid #e2e8f0;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.9);
+            border-color: #667eea;
+            color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .status {
+            text-align: center;
+            margin-top: 20px;
+            padding: 16px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .status.success {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .voice-info {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+            border: 1px solid rgba(102, 126, 234, 0.1);
+            padding: 25px;
+            border-radius: 16px;
+            margin-top: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .voice-info::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.5), transparent);
+        }
+
+        .voice-info h3 {
+            color: #1e293b;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .voice-info p {
+            color: #64748b;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .help-text-small {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-top: 8px;
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                padding: 30px 20px;
+            }
+            
+            .controls {
+                grid-template-columns: 1fr;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            .header h1 {
+                font-size: 2.2rem;
+            }
+            
+            .nav-links {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .header p {
+                font-size: 1rem;
+            }
+        }
+  </style>
+</head>
+<body>
+  <div class="container">
+        <div class="header">
+            <div class="logo-container">
+                <img src="WhatsApp Image 2025-09-23 at 07.10.24_3b847942.jpg" alt="Samvaad Setu Logo" class="logo">
+                <h1>🔊 Text-to-Speech</h1>
+            </div>
+            <p>Essential tool for deaf and dumb users - Convert text to speech with high-quality voices</p>
+            <div class="nav-links">
+                <a href="home.html">🏠 Home</a>
+                <a href="speech-to-text.html">🎤➡️📝 STT</a>
+                <a href="text-to-sign.html">📝➡️👋 Text-to-Sign</a>
+                <a href="sign-to-text.html">👋➡️📝 Sign-to-Text</a>
+            </div>
+        </div>
+
+        <div class="content">
+            <form id="ttsForm">
+            <div class="form-group">
+                <label for="textInput">Enter your text to convert to speech:</label>
+                <textarea 
+                    id="textInput" 
+                    placeholder="Type or paste your text here... Example: Hello, this is a test of the text-to-speech system."
+                    required
+                    aria-describedby="textInputHelp"
+                    role="textbox"
+                ></textarea>
+                <div id="textInputHelp" class="help-text-small">This text will be converted to speech. Use clear, simple language for best results.</div>
+      </div>
+
+            <div class="controls">
+                <div class="form-group">
+                    <label for="speedSelect">Speech Speed:</label>
+                    <select id="speedSelect">
+                        <option value="0.5">Slow (0.5x)</option>
+                        <option value="0.75">Medium-Slow (0.75x)</option>
+                        <option value="1" selected>Normal (1x)</option>
+                        <option value="1.25">Medium-Fast (1.25x)</option>
+                        <option value="1.5">Fast (1.5x)</option>
+                        <option value="2">Very Fast (2x)</option>
+          </select>
+      </div>
+
+                <div class="form-group">
+                    <label for="languageSelect">Output Mode:</label>
+                    <select id="languageSelect">
+                        <option value="auto" selected>Auto Detect</option>
+                        <option value="hindi">Hindi</option>
+                        <option value="english">English</option>
+                    </select>
+        </div>
+      </div>
+
+            <div class="button-group" role="group" aria-label="Speech controls">
+                <button type="button" id="speakBtn" class="btn-primary" aria-label="Start speaking the text">
+                    🔊 Speak Text
+                </button>
+                <button type="button" id="testTranslationBtn" class="btn-secondary" aria-label="Test translation functionality">
+                    🔄 Test Translation
+                </button>
+                <button type="button" id="stopBtn" class="btn-secondary" aria-label="Stop current speech" disabled>
+                    ⏹️ Stop
+                </button>
+                <button type="button" id="pauseBtn" class="btn-secondary" aria-label="Pause current speech" disabled>
+                    ⏸️ Pause
+                </button>
+        </div>
+        </form>
+
+        <div id="status" class="status" style="display: none;"></div>
+
+        <div id="translationResult" style="display: none; margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 10px; border-left: 4px solid #667eea;">
+            <h3 style="color: #333; margin-bottom: 10px;">📝 Translation Result:</h3>
+            <div id="translatedText" style="color: #666; line-height: 1.6;"></div>
+    </div>
+
+        <div class="voice-info">
+            <h3>💡 How it works</h3>
+            <p>
+                <strong>Auto Detect:</strong> Automatically detects if your text is in English or Hindi, then:
+                <br>• If English → Speaks directly in English
+                <br>• If Hindi → Speaks directly in Hindi
+                <br>Example: "My name is Pabitra" → English speech | "मेरा नाम पबित्रा है" → Hindi speech
+            </p>
+            <p>
+                <strong>Hindi:</strong> Always outputs in Hindi:
+                <br>• If English text → Translates to Hindi and speaks in Hindi
+                <br>• If Hindi text → Speaks directly in Hindi
+            </p>
+            <p>
+                <strong>English:</strong> Always outputs in English:
+                <br>• If English text → Speaks directly in English
+                <br>• If Hindi text → Translates to English and speaks in English
+            </p>
+            <p>
+                <strong>Language Detection:</strong> Uses Unicode character analysis to detect Hindi vs English text automatically.
+            </p>
+            </div>
+        </div>
+    </div>
+
+  <script>
+        class TextToSpeech {
+            constructor() {
+                this.synth = window.speechSynthesis;
+                this.voices = [];
+                this.currentUtterance = null;
+                this.isPlaying = false;
+                this.isPaused = false;
+
+                this.initializeElements();
+                this.loadVoices();
+                this.setupEventListeners();
+            }
+
+            initializeElements() {
+                this.textInput = document.getElementById('textInput');
+                this.languageSelect = document.getElementById('languageSelect');
+                this.speedSelect = document.getElementById('speedSelect');
+                this.speakBtn = document.getElementById('speakBtn');
+                this.testTranslationBtn = document.getElementById('testTranslationBtn');
+                this.stopBtn = document.getElementById('stopBtn');
+                this.pauseBtn = document.getElementById('pauseBtn');
+                this.status = document.getElementById('status');
+                this.translationResult = document.getElementById('translationResult');
+                this.translatedText = document.getElementById('translatedText');
+            }
+
+            loadVoices() {
+                // Load voices when they become available
+                const loadVoices = () => {
+                    this.voices = this.synth.getVoices();
+                    this.setupVoices();
+                };
+
+                // Load immediately if voices are already available
+                if (this.synth.getVoices().length > 0) {
+                    loadVoices();
+                } else {
+                    // Wait for voices to load
+                    this.synth.onvoiceschanged = loadVoices;
+                }
+            }
+
+            setupVoices() {
+                // Find best English (U.S.) and Hindi voices
+                this.englishVoice = this.voices.find(voice => 
+                    voice.lang === 'en-US' || voice.lang.startsWith('en-US')
+                ) || this.voices.find(voice => 
+                    voice.lang.startsWith('en')
+                );
+                
+                this.hindiVoice = this.voices.find(voice => 
+                    voice.lang === 'hi-IN' || voice.lang.startsWith('hi-IN')
+                ) || this.voices.find(voice => 
+                    voice.lang.startsWith('hi')
+                );
+            }
+
+            setupEventListeners() {
+                this.speakBtn.addEventListener('click', () => this.speak());
+                this.testTranslationBtn.addEventListener('click', () => this.testTranslation());
+                this.stopBtn.addEventListener('click', () => this.stop());
+                this.pauseBtn.addEventListener('click', () => this.togglePause());
+                
+                // Handle form submission
+                document.getElementById('ttsForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.speak();
+                });
+            }
+
+            async speak() {
+                const text = this.textInput.value.trim();
+                if (!text) {
+                    this.showStatus('Please enter some text to speak.', 'error');
+                    return;
+                }
+
+                const languageMode = this.languageSelect.value;
+                
+                // Stop any current speech
+                this.synth.cancel();
+
+                if (languageMode === 'auto') {
+                    await this.speakAutoDetect(text);
+                } else if (languageMode === 'hindi') {
+                    await this.speakHindi(text);
+                } else if (languageMode === 'english') {
+                    await this.speakEnglish(text);
+                }
+            }
+
+            async speakBothLanguages(text) {
+                // First speak in English
+                this.speakInLanguage(text, this.englishVoice, 'English', async () => {
+                    // Translate to Hindi and then speak
+                    try {
+                        this.showStatus('Translating to Hindi...', 'info');
+                        const hindiText = await this.translateText(text, 'en', 'hi');
+                        this.showTranslationResult(hindiText);
+                        this.speakInLanguage(hindiText, this.hindiVoice, 'Hindi', () => {
+                            this.isPlaying = false;
+                            this.isPaused = false;
+                            this.speakBtn.disabled = false;
+                            this.speakBtn.textContent = '🔊 Speak Text';
+                            this.pauseBtn.disabled = true;
+                            this.pauseBtn.textContent = '⏸️ Pause';
+                            this.stopBtn.disabled = true;
+                            this.showStatus('Speech completed in both languages!', 'success');
+                        });
+                    } catch (error) {
+                        this.showStatus('Translation failed, speaking original text in Hindi voice', 'error');
+                        this.speakInLanguage(text, this.hindiVoice, 'Hindi', () => {
+                            this.isPlaying = false;
+                            this.isPaused = false;
+                            this.speakBtn.disabled = false;
+                            this.speakBtn.textContent = '🔊 Speak Text';
+                            this.pauseBtn.disabled = true;
+                            this.pauseBtn.textContent = '⏸️ Pause';
+                            this.stopBtn.disabled = true;
+                            this.showStatus('Speech completed!', 'success');
+                        });
+                    }
+                });
+            }
+
+            async speakTranslatedHindi(text) {
+                try {
+                    this.showStatus('Translating to Hindi...', 'info');
+                    const hindiText = await this.translateText(text, 'en', 'hi');
+                    this.showTranslationResult(hindiText);
+                    this.speakInLanguage(hindiText, this.hindiVoice, 'Hindi', () => {
+                        this.isPlaying = false;
+                        this.isPaused = false;
+                        this.speakBtn.disabled = false;
+                        this.speakBtn.textContent = '🔊 Speak Text';
+                        this.pauseBtn.disabled = true;
+                        this.pauseBtn.textContent = '⏸️ Pause';
+                        this.stopBtn.disabled = true;
+                        this.showStatus('Hindi speech completed!', 'success');
+                    });
+                } catch (error) {
+                    this.showStatus('Translation failed, speaking original text in Hindi voice', 'error');
+                    this.speakInLanguage(text, this.hindiVoice, 'Hindi', () => {
+                        this.isPlaying = false;
+                        this.isPaused = false;
+                        this.speakBtn.disabled = false;
+                        this.speakBtn.textContent = '🔊 Speak Text';
+                        this.pauseBtn.disabled = true;
+                        this.pauseBtn.textContent = '⏸️ Pause';
+                        this.stopBtn.disabled = true;
+                        this.showStatus('Speech completed!', 'success');
+                    });
+                }
+            }
+
+            speakSingleLanguage(text, language) {
+                const voice = language === 'english' ? this.englishVoice : this.hindiVoice;
+                const langName = language === 'english' ? 'English' : 'Hindi';
+                this.speakInLanguage(text, voice, langName, () => {
+                    this.isPlaying = false;
+                    this.isPaused = false;
+                    this.speakBtn.disabled = false;
+                    this.speakBtn.textContent = '🔊 Speak Text';
+                    this.pauseBtn.disabled = true;
+                    this.pauseBtn.textContent = '⏸️ Pause';
+                    this.stopBtn.disabled = true;
+                    this.showStatus(`Speech completed in ${langName}!`, 'success');
+                });
+            }
+
+            speakInLanguage(text, voice, languageName, onComplete) {
+                this.currentUtterance = new SpeechSynthesisUtterance(text);
+                
+                // Set voice
+                if (voice) {
+                    this.currentUtterance.voice = voice;
+                }
+
+                // Set properties
+                this.currentUtterance.rate = parseFloat(this.speedSelect.value);
+                this.currentUtterance.pitch = 1;
+                this.currentUtterance.volume = 1;
+
+                // Set up event handlers
+                this.currentUtterance.onstart = () => {
+                    this.isPlaying = true;
+                    this.isPaused = false;
+                    this.speakBtn.disabled = true;
+                    this.speakBtn.textContent = `🔊 Speaking ${languageName}...`;
+                    this.pauseBtn.disabled = false;
+                    this.stopBtn.disabled = false;
+                    this.showStatus(`Speaking in ${languageName}...`, 'info');
+                };
+
+                this.currentUtterance.onend = () => {
+                    onComplete();
+                };
+
+                this.currentUtterance.onerror = (event) => {
+                    this.isPlaying = false;
+                    this.isPaused = false;
+                    this.speakBtn.disabled = false;
+                    this.speakBtn.textContent = '🔊 Speak Text';
+                    this.pauseBtn.disabled = true;
+                    this.stopBtn.disabled = true;
+                    this.showStatus(`Error in ${languageName}: ${event.error}`, 'error');
+                };
+
+                // Start speaking
+                this.synth.speak(this.currentUtterance);
+            }
+
+            async translateText(text, fromLang, toLang) {
+                // Clean and preprocess text for better translation
+                const cleanedText = this.preprocessText(text);
+                const targetLangCode = toLang === 'hi' ? 'hi' : 'en'; // Handle both directions
+                
+                console.log(`Translating from ${fromLang} to ${toLang} (${targetLangCode})`);
+                console.log('Text to translate:', cleanedText.substring(0, 100) + '...');
+                
+                // For very long texts, try to translate in chunks
+                if (cleanedText.length > 1000) {
+                    return await this.translateLongText(cleanedText, fromLang, toLang);
+                }
+                
+                // Try multiple translation services with specific Hindi targeting
+      const endpoints = [
+                    {
+                        url: 'https://libretranslate.com/translate',
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            q: cleanedText, 
+                            source: fromLang, 
+                            target: targetLangCode, 
+                            format: 'text',
+                            api_key: '' // Add if you have one
+                        })
+                    },
+                    {
+                        url: 'https://translate.astian.org/translate',
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            q: cleanedText, 
+                            source: fromLang, 
+                            target: targetLangCode, 
+                            format: 'text' 
+                        })
+                    }
+                ];
+
+                // Try Google Translate API (free tier) first for better accuracy
+                try {
+                    const googleUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${fromLang}&tl=${targetLangCode}&dt=t&q=${encodeURIComponent(cleanedText)}`;
+                    const response = await fetch(googleUrl);
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data && data[0] && data[0][0] && data[0][0][0]) {
+                            console.log('Google Translate successful:', data[0][0][0]);
+                            return data[0][0][0];
+                        }
+                    }
+                } catch (error) {
+                    console.log('Google Translate failed:', error);
+                }
+
+                // Try LibreTranslate endpoints
+                for (let i = 0; i < 2; i++) {
+                    try {
+                        const endpoint = endpoints[i];
+                        const response = await fetch(endpoint.url, {
+                            method: endpoint.method,
+                            headers: endpoint.headers,
+                            body: endpoint.body
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data && data.translatedText) {
+                                console.log('Translation successful:', data.translatedText);
+                                return data.translatedText;
+                            }
+                        }
+                    } catch (error) {
+                        console.log(`Translation endpoint ${endpoints[i].url} failed:`, error);
+                    }
+                }
+
+                // Try MyMemory as fallback with specific targeting
+                try {
+                    const myMemoryUrl = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(cleanedText)}&langpair=${fromLang}|${targetLangCode}`;
+                    const response = await fetch(myMemoryUrl);
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data && data.responseData && data.responseData.translatedText) {
+                            console.log('MyMemory translation successful:', data.responseData.translatedText);
+                            return data.responseData.translatedText;
+                        }
+                    }
+                } catch (error) {
+                    console.log('MyMemory translation failed:', error);
+                }
+
+                // Enhanced fallback translations for common phrases (Standard Hindi)
+                const fallbackTranslations = {
+                    'my name is': 'mera naam hai',
+                    'what are you doing': 'aap kya kar rahe hain',
+                    'hello': 'namaste',
+                    'thank you': 'dhanyawad',
+                    'good morning': 'shubh prabhat',
+                    'good evening': 'shubh sandhya',
+                    'how are you': 'aap kaise hain',
+                    'i am fine': 'main theek hun',
+                    'what is your name': 'aapka naam kya hai',
+                    'nice to meet you': 'aap se milkar khushi hui',
+                    'goodbye': 'alvida',
+                    'yes': 'haan',
+                    'no': 'nahi',
+                    'please': 'kripya',
+                    'sorry': 'maaf kijiye',
+                    'excuse me': 'kshama kijiye',
+                    'i love you': 'main aap se pyaar karta hun',
+                    'how much': 'kitna',
+                    'where': 'kahan',
+                    'when': 'kab',
+                    'why': 'kyun'
+                };
+
+                const lowerText = cleanedText.toLowerCase();
+                for (const [english, hindi] of Object.entries(fallbackTranslations)) {
+                    if (lowerText.includes(english)) {
+                        const translated = cleanedText.replace(new RegExp(english, 'gi'), hindi);
+                        console.log('Fallback translation:', translated);
+                        return translated;
+                    }
+                }
+
+                throw new Error('All translation services failed. Please try a different text or check your internet connection.');
+            }
+
+            preprocessText(text) {
+                // Clean and preprocess text for better translation
+                let cleaned = text.trim();
+                
+                // Remove extra spaces
+                cleaned = cleaned.replace(/\s+/g, ' ');
+                
+                // For long paragraphs, we'll translate the whole text
+                // Only remove trailing punctuation that might confuse translation
+                cleaned = cleaned.replace(/[.!?]+$/, '');
+                
+                console.log('Preprocessed text length:', cleaned.length);
+                console.log('Preprocessed text preview:', cleaned.substring(0, 100) + '...');
+                return cleaned;
+            }
+
+            async translateLongText(text, fromLang, toLang) {
+                // Split long text into sentences and translate each
+                const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+                const translatedSentences = [];
+                const targetLangCode = toLang === 'hi' ? 'hi' : 'en';
+                
+                console.log(`Translating ${sentences.length} sentences from ${fromLang} to ${toLang}...`);
+                
+                for (let i = 0; i < sentences.length; i++) {
+                    const sentence = sentences[i].trim();
+                    if (sentence.length > 0) {
+                        try {
+                            console.log(`Translating sentence ${i + 1}/${sentences.length}: ${sentence.substring(0, 50)}...`);
+                            const translated = await this.translateSingleSentence(sentence, fromLang, toLang);
+                            translatedSentences.push(translated);
+                            
+                            // Add a small delay to avoid overwhelming the translation service
+                            await new Promise(resolve => setTimeout(resolve, 500));
+                        } catch (error) {
+                            console.log(`Failed to translate sentence ${i + 1}:`, error);
+                            translatedSentences.push(sentence); // Keep original if translation fails
+                        }
+                    }
+                }
+                
+                return translatedSentences.join('. ') + '.';
+            }
+
+            async translateSingleSentence(sentence, fromLang, toLang) {
+                const targetLangCode = toLang === 'hi' ? 'hi' : 'en';
+                
+                // Try Google Translate first for individual sentences
+                try {
+                    const googleUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${fromLang}&tl=${targetLangCode}&dt=t&q=${encodeURIComponent(sentence)}`;
+                    const response = await fetch(googleUrl);
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data && data[0] && data[0][0] && data[0][0][0]) {
+                            return data[0][0][0];
+                        }
+                    }
+                } catch (error) {
+                    console.log('Google Translate failed for sentence:', error);
+                }
+
+                // Fallback to LibreTranslate
+                try {
+                    const response = await fetch('https://libretranslate.com/translate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            q: sentence, 
+                            source: fromLang, 
+                            target: targetLangCode, 
+                            format: 'text' 
+                        })
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data && data.translatedText) {
+                            return data.translatedText;
+                        }
+                    }
+                } catch (error) {
+                    console.log('LibreTranslate failed for sentence:', error);
+                }
+
+                // Return original sentence if all translation fails
+                return sentence;
+            }
+
+            detectLanguage(text) {
+                // Enhanced language detection based on character patterns
+                const hindiPattern = /[\u0900-\u097F]/; // Hindi Unicode range
+                const englishPattern = /[a-zA-Z]/;
+                
+                const hindiMatches = (text.match(/[\u0900-\u097F]/g) || []).length;
+                const englishMatches = (text.match(/[a-zA-Z]/g) || []).length;
+                const totalChars = text.replace(/\s/g, '').length; // Total non-space characters
+                
+                console.log('Language detection:');
+                console.log('- Hindi characters:', hindiMatches);
+                console.log('- English characters:', englishMatches);
+                console.log('- Total characters:', totalChars);
+                console.log('- Text sample:', text.substring(0, 50));
+                
+                // If text contains Hindi characters, it's Hindi
+                if (hindiMatches > 0) {
+                    console.log('Detected: Hindi (has Hindi characters)');
+                    return 'hindi';
+                }
+                
+                // If text contains mostly English characters, it's English
+                if (englishMatches > 0 && englishMatches > hindiMatches) {
+                    console.log('Detected: English (has English characters)');
+                    return 'english';
+                }
+                
+                // If no recognizable characters, default to English
+                console.log('Detected: English (default fallback)');
+                return 'english';
+            }
+
+            async speakAutoDetect(text) {
+                console.log('=== AUTO DETECT MODE ===');
+                console.log('Input text:', text.substring(0, 100) + '...');
+                
+                const detectedLanguage = this.detectLanguage(text);
+                console.log('Final detected language:', detectedLanguage);
+                
+                this.showStatus(`Detected: ${detectedLanguage.toUpperCase()}`, 'info');
+                
+                if (detectedLanguage === 'hindi') {
+                    console.log('Processing Hindi text directly...');
+                    // Text is already in Hindi, speak it directly
+                    this.speakInLanguage(text, this.hindiVoice, 'Hindi', () => {
+                        this.isPlaying = false;
+                        this.isPaused = false;
+                        this.speakBtn.disabled = false;
+                        this.speakBtn.textContent = '🔊 Speak Text';
+                        this.pauseBtn.disabled = true;
+                        this.pauseBtn.textContent = '⏸️ Pause';
+                        this.stopBtn.disabled = true;
+                        this.showStatus('Hindi speech completed!', 'success');
+                    });
+                } else {
+                    console.log('Processing English text - speaking in English...');
+                    // Text is in English, speak it directly in English
+                    this.speakInLanguage(text, this.englishVoice, 'English', () => {
+                        this.isPlaying = false;
+                        this.isPaused = false;
+                        this.speakBtn.disabled = false;
+                        this.speakBtn.textContent = '🔊 Speak Text';
+                        this.pauseBtn.disabled = true;
+                        this.pauseBtn.textContent = '⏸️ Pause';
+                        this.stopBtn.disabled = true;
+                        this.showStatus('English speech completed!', 'success');
+                    });
+                }
+            }
+
+            async speakHindi(text) {
+                const detectedLanguage = this.detectLanguage(text);
+                
+                if (detectedLanguage === 'hindi') {
+                    // Text is already in Hindi, speak it directly
+                    this.speakInLanguage(text, this.hindiVoice, 'Hindi', () => {
+                        this.isPlaying = false;
+                        this.isPaused = false;
+                        this.speakBtn.disabled = false;
+                        this.speakBtn.textContent = '🔊 Speak Text';
+                        this.pauseBtn.disabled = true;
+                        this.pauseBtn.textContent = '⏸️ Pause';
+                        this.stopBtn.disabled = true;
+                        this.showStatus('Hindi speech completed!', 'success');
+                    });
+                } else {
+                    // Text is in English, translate to Hindi and speak
+                    try {
+                        this.showStatus('Translating English to Hindi...', 'info');
+                        const hindiText = await this.translateText(text, 'en', 'hi');
+                        this.showTranslationResult(hindiText);
+                        this.speakInLanguage(hindiText, this.hindiVoice, 'Hindi', () => {
+                            this.isPlaying = false;
+                            this.isPaused = false;
+                            this.speakBtn.disabled = false;
+                            this.speakBtn.textContent = '🔊 Speak Text';
+                            this.pauseBtn.disabled = true;
+                            this.pauseBtn.textContent = '⏸️ Pause';
+                            this.stopBtn.disabled = true;
+                            this.showStatus('Hindi speech completed!', 'success');
+                        });
+                    } catch (error) {
+                        this.showStatus('Translation failed, speaking original text in Hindi voice', 'error');
+                        this.speakInLanguage(text, this.hindiVoice, 'Hindi', () => {
+                            this.isPlaying = false;
+                            this.isPaused = false;
+                            this.speakBtn.disabled = false;
+                            this.speakBtn.textContent = '🔊 Speak Text';
+                            this.pauseBtn.disabled = true;
+                            this.pauseBtn.textContent = '⏸️ Pause';
+                            this.stopBtn.disabled = true;
+                            this.showStatus('Speech completed!', 'success');
+                        });
+                    }
+                }
+            }
+
+            async speakEnglish(text) {
+                const detectedLanguage = this.detectLanguage(text);
+                console.log('speakEnglish - Detected language:', detectedLanguage);
+                console.log('speakEnglish - Input text:', text.substring(0, 100) + '...');
+                
+                if (detectedLanguage === 'english') {
+                    // Text is already in English, speak it directly
+                    this.speakInLanguage(text, this.englishVoice, 'English', () => {
+                        this.isPlaying = false;
+                        this.isPaused = false;
+                        this.speakBtn.disabled = false;
+                        this.speakBtn.textContent = '🔊 Speak Text';
+                        this.pauseBtn.disabled = true;
+                        this.pauseBtn.textContent = '⏸️ Pause';
+                        this.stopBtn.disabled = true;
+                        this.showStatus('English speech completed!', 'success');
+                    });
+          } else {
+                    // Text is in Hindi, translate to English and speak
+                    try {
+                        this.showStatus('Translating Hindi to English...', 'info');
+                        console.log('Starting Hindi to English translation...');
+                        const englishText = await this.translateText(text, 'hi', 'en');
+                        console.log('Translation result:', englishText);
+                        this.showTranslationResult(englishText);
+                        this.speakInLanguage(englishText, this.englishVoice, 'English', () => {
+                            this.isPlaying = false;
+                            this.isPaused = false;
+                            this.speakBtn.disabled = false;
+                            this.speakBtn.textContent = '🔊 Speak Text';
+                            this.pauseBtn.disabled = true;
+                            this.pauseBtn.textContent = '⏸️ Pause';
+                            this.stopBtn.disabled = true;
+                            this.showStatus('English speech completed!', 'success');
+                        });
+                    } catch (error) {
+                        this.showStatus('Translation failed, speaking original text in English voice', 'error');
+                        this.speakInLanguage(text, this.englishVoice, 'English', () => {
+                            this.isPlaying = false;
+                            this.isPaused = false;
+                            this.speakBtn.disabled = false;
+                            this.speakBtn.textContent = '🔊 Speak Text';
+                            this.pauseBtn.disabled = true;
+                            this.pauseBtn.textContent = '⏸️ Pause';
+                            this.stopBtn.disabled = true;
+                            this.showStatus('Speech completed!', 'success');
+                        });
+                    }
+                }
+            }
+
+            showTranslationResult(hindiText) {
+                this.translatedText.textContent = hindiText;
+                this.translationResult.style.display = 'block';
+            }
+
+            async testTranslation() {
+                const text = this.textInput.value.trim();
+                if (!text) {
+                    this.showStatus('Please enter some text to test translation.', 'error');
+                    return;
+                }
+
+                this.testTranslationBtn.disabled = true;
+                this.testTranslationBtn.textContent = '🔄 Testing...';
+                this.showStatus('Testing translation...', 'info');
+
+                try {
+                    const hindiText = await this.translateText(text, 'en', 'hi');
+                    this.showTranslationResult(hindiText);
+                    this.showStatus('Translation successful! Check the result above.', 'success');
+                } catch (error) {
+                    this.showStatus(`Translation failed: ${error.message}`, 'error');
+                } finally {
+                    this.testTranslationBtn.disabled = false;
+                    this.testTranslationBtn.textContent = '🔄 Test Translation';
+                }
+            }
+
+
+            stop() {
+                this.synth.cancel();
+                this.isPlaying = false;
+                this.isPaused = false;
+                this.speakBtn.disabled = false;
+                this.speakBtn.textContent = '🔊 Speak Text';
+                this.pauseBtn.disabled = true;
+                this.pauseBtn.textContent = '⏸️ Pause';
+                this.stopBtn.disabled = true;
+                this.showStatus('Speech stopped.', 'info');
+            }
+
+            togglePause() {
+                if (this.isPaused) {
+                    this.synth.resume();
+                    this.isPaused = false;
+                    this.pauseBtn.textContent = '⏸️ Pause';
+                    this.showStatus('Speech resumed.', 'info');
+        } else {
+                    this.synth.pause();
+                    this.isPaused = true;
+                    this.pauseBtn.textContent = '▶️ Resume';
+                    this.showStatus('Speech paused.', 'info');
+                }
+            }
+
+            showStatus(message, type) {
+                this.status.textContent = message;
+                this.status.className = `status ${type}`;
+                this.status.style.display = 'block';
+                
+                // Auto-hide success messages after 3 seconds
+                if (type === 'success') {
+                    setTimeout(() => {
+                        this.status.style.display = 'none';
+                    }, 3000);
+                }
+            }
+        }
+
+        // Initialize the TTS system when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new TextToSpeech();
+        });
+  </script>
+</body>
+</html>
